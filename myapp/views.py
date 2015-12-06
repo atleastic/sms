@@ -73,7 +73,8 @@ def f_req(request):
             #print user.name
         final_user_array_object["req_users"]=request_user_array
         return JsonResponse(final_user_array_object)
-
+#handling user accepted requests
+#related html desktop file AcceptRequest.html
 @csrf_exempt
 def acc_req(request):
     if request.method=='POST':
@@ -82,6 +83,7 @@ def acc_req(request):
         acceptFriend(acceptreq.request_user,acceptreq.current_user)
     return JsonResponse({"abcd":"Friendship Accepted"})
 
+#handling user rejected requests
 @csrf_exempt
 def rej_req(request):
     if request.method=='POST':
@@ -109,6 +111,8 @@ def dp(request):
         # Redirect to the document list after POST
         return JsonResponse({"abcd":abc})# HttpResponseRedirect(reverse('list'))
 
+#handling relationship status between various users
+#related desktop file is getStatus.html
 @csrf_exempt
 def get_status(request):
     print("inside get_status")
@@ -122,7 +126,7 @@ def get_status(request):
         else:
             return JsonResponse({"status":"Add Friend"})
 
-
+#helper method to check if the users are friends
 def isFriend(current_user,request_user):
     query="Match (a:User {name:{name1}})-[:Friend]-(b:User {name:{name2}}) return a,b"
     result,columns=db.cypher_query(query,{'name1':current_user,'name2':request_user})
@@ -131,6 +135,7 @@ def isFriend(current_user,request_user):
     else:
         return False
 
+#helper method to check if the user has sent a friend request
 def isRequest(current_user,request_user):
     query="Match (a:User {name:{name1}})-[:Request]->(b:User {name:{name2}}) return a,b"
     result,columns=db.cypher_query(query,{'name1':current_user,'name2':request_user})
