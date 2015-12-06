@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from neomodel import db
 import py2neo
 from myapp.Neomodels import User, Photos
-from myapp.models import Document,Doc,AddFriendRequest,GetFriendRequests,Dp
+from myapp.models import Document,Doc,AddFriendRequest,GetFriendRequests,Dp, AcceptFriendRequest,RejectFriendRequest
 from myapp.Forms import DocumentForm,DocForm
 
 #to handle direct image upload requests
@@ -74,6 +74,21 @@ def f_req(request):
         final_user_array_object["req_users"]=request_user_array
         return JsonResponse(final_user_array_object)
 
+@csrf_exempt
+def acc_req(request):
+    if request.method=='POST':
+        acceptreq=AcceptFriendRequest(current_user=request.POST['current_user'],request_user=request.POST['request_user'])
+        removeRequest(acceptreq.request_user,acceptreq.current_user)
+        acceptFriend(acceptreq.request_user,acceptreq.current_user)
+    return JsonResponse({"abcd":"Friendship Accepted"})
+
+@csrf_exempt
+def rej_req(request):
+    if request.method=='POST':
+        acceptreq=RejectFriendRequest(current_user=request.POST['current_user'],request_user=request.POST['request_user'])
+        removeRequest(acceptreq.request_user,acceptreq.current_user)
+    return JsonResponse({"abcd":"Friendship Rejected"})
+
 #handling display picture changes
 #relevant html file on desktop mydp.html
 @csrf_exempt
@@ -93,6 +108,37 @@ def dp(request):
 
         # Redirect to the document list after POST
         return JsonResponse({"abcd":abc})# HttpResponseRedirect(reverse('list'))
+
+@csrf_exempt
+def get_status(request):
+    print("inside get_status")
+    if request.method== 'GET':
+        rel_status=AcceptFriendRequest(current_user=request.GET['current_user'],request_user=request.GET['request_user'])
+        print("inside get_status if")
+        if(isFriend(rel_status.current_user,rel_status.request_user)):
+            return JsonResponse({"status":"Friend"})
+        if(isRequest(rel_status.current_user,rel_status.request_user)):
+            return JsonResponse({"status":"Requested"})
+        else:
+            return JsonResponse({"status":"Add Friend"})
+
+
+def isFriend(current_user,request_user):
+    query="Match (a:User {name:{name1}})-[:Friend]-(b:User {name:{name2}}) return a,b"
+    result,columns=db.cypher_query(query,{'name1':current_user,'name2':request_user})
+    if(result):
+        return True
+    else:
+        return False
+
+def isRequest(current_user,request_user):
+    query="Match (a:User {name:{name1}})-[:Request]->(b:User {name:{name2}}) return a,b"
+    result,columns=db.cypher_query(query,{'name1':current_user,'name2':request_user})
+    if(result):
+        return True
+    else:
+        return False
+
 
 #helper method that returns the Photos object for the current dp of a particular user
 def getDp(user):
@@ -180,6 +226,16 @@ def createRequest(current_user,request_user):
     """query = 'match (a:User {name :{user1}}),(b:User {name:{user2}}) create a-[:Request]->b'
     db.cypher_query(query,{'user1':user1.name,'user2':user2.name})"""
     #print("Reached here")
+    return
+
+def removeRequest(current_user,request_user):
+    query="match (a:User {name:{user1}})-[b:Request]->(c:User {name:{user2}}) delete b"
+    db.cypher_query(query,{'user1':current_user,'user2':request_user})
+    return
+
+def acceptFriend(current_user,request_user):
+    query="match (a:User {name:{user1}}),(c:User {name:{user2}}) create a-[:Friend]-> c"
+    db.cypher_query(query,{'user1':current_user,'user2':request_user})
     return
 
 #helper method that checks for pending friend requests

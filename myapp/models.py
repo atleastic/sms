@@ -30,6 +30,18 @@ class AddFriendRequest(models.Model):
     def __str__(self):
         return self.current_user,self.request_user
 
+class AcceptFriendRequest(models.Model):
+    current_user=models.CharField(max_length=100)
+    request_user=models.CharField(max_length=100)
+    def __str__(self):
+        return self.current_user,self.request_user
+
+class RejectFriendRequest(models.Model):
+    current_user=models.CharField(max_length=100)
+    request_user=models.CharField(max_length=100)
+    def __str__(self):
+        return self.current_user,self.request_user
+
 class GetFriendRequests(models.Model):
     current_user=models.CharField(max_length=100)
     def __str__(self):
